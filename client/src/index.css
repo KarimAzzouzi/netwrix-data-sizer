@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+}
+
+@layer components {
+  .card { @apply bg-white rounded-xl border border-slate-200 shadow-sm; }
+  .card-title { @apply text-xs font-bold uppercase tracking-wider text-slate-500 mb-4; }
+  .btn { @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150 cursor-pointer border-0; }
+  .btn-primary { @apply bg-[#1B3A6B] text-white hover:bg-[#2A5298]; }
+  .btn-secondary { @apply bg-slate-100 text-[#1B3A6B] border border-slate-200 hover:bg-[#1B3A6B] hover:text-white; }
+  .btn-success { @apply bg-emerald-600 text-white hover:bg-emerald-700; }
+  .btn-orange { @apply bg-[#E8702A] text-white hover:opacity-90; }
+  .btn-scan { @apply bg-gradient-to-r from-[#1B3A6B] to-[#2A5298] text-white text-base px-8 py-3 rounded-xl justify-center hover:opacity-90 w-full; }
+  .tab-btn { @apply px-4 py-2.5 text-sm font-semibold text-slate-500 border-b-2 border-transparent -mb-px rounded-t-lg transition-all; }
+  .tab-btn.active { @apply text-[#1B3A6B] border-[#1B3A6B] bg-blue-50; }
+  .tab-btn:not(.active):hover { @apply text-slate-700 bg-slate-50; }
+  .data-table { @apply w-full text-sm border-collapse; }
+  .data-table th { @apply bg-[#1B3A6B] text-white px-4 py-2.5 text-left text-xs uppercase tracking-wider font-semibold; }
+  .data-table th:first-child { @apply rounded-tl-lg; }
+  .data-table th:last-child { @apply rounded-tr-lg; }
+  .data-table td { @apply px-4 py-2.5 border-b border-slate-100; }
+  .data-table tr:last-child td { @apply border-b-0; }
+  .data-table tr:hover td { @apply bg-slate-50; }
+  .path-tag { @apply flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 text-sm text-[#1B3A6B] max-w-xs; }
+  .input-field { @apply flex-1 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 text-slate-800 outline-none transition-all focus:border-[#2A5298] focus:bg-white focus:ring-2 focus:ring-blue-100; }
+}
+
+.tree-node:hover { background: #EFF3FB; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 99px; }
+::-webkit-scrollbar-track { background: transparent; }

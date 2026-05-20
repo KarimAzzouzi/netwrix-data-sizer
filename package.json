@@ -1,16 +1,18 @@
 {
   "name": "ndc-sizer",
   "version": "1.0.0",
-  "description": "NDC Sizing Tool - Netwrix Data Classification hardware recommendations",
+  "description": "Netwrix Data Sizer - NDC hardware sizing tool",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "build": "pkg server.js --targets node18-win-x64 --output dist/NDC-Sizer.exe --compress GZip"
+    "dev:server": "node server.js",
+    "dev:client": "cd client && npm run dev",
+    "build:ui": "cd client && npm install && npm run build",
+    "build": "npm run build:ui && pkg server.js --targets node18-win-x64 --output dist/NDC-Sizer.exe --compress GZip"
   },
   "pkg": {
-    "targets": [
-      "node18-win-x64"
-    ],
+    "assets": ["public/**/*"],
+    "targets": ["node18-win-x64"],
     "outputPath": "dist"
   },
   "dependencies": {

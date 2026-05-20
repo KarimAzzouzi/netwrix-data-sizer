@@ -406,9 +406,12 @@ function getLocalDrives() {
   return [{ letter: '/', label: 'Root', free: 0, total: 0 }];
 }
 
-// ── Inline HTML ───────────────────────────────────────────────────────────────
+// ── Serve UI ──────────────────────────────────────────────────────────────────
 
-const HTML = `<!DOCTYPE html>
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+const _LEGACY_HTML_START = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
@@ -1203,10 +1206,6 @@ loadDrives();
 </body>
 </html>`;
 
-// ── Serve UI ──────────────────────────────────────────────────────────────────
-
-app.get('/', (req, res) => res.send(HTML));
-
 // ── API routes ────────────────────────────────────────────────────────────────
 
 app.get('/api/drives', (req, res) => res.json(getLocalDrives()));
@@ -1547,6 +1546,177 @@ app.post('/api/export/pdf', async (req, res) => {
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', 'attachment; filename="NDC_Sizing_Report.pdf"');
   res.send(Buffer.from(pdfBytes));
+});
+
+// ── Merge results endpoint ────────────────────────────────────────────────────
+
+app.post('/api/merge-results', (req, res) => {
+  const { results } = req.body;
+  if (!results || !Array.isArray(results) || results.length === 0) {
+    return res.status(400).json({ error: 'results array required' });
+  }
+  const trees = results.map(r => r.tree).filter(Boolean);
+  const merged = mergeScans(trees);
+  const sizing = computeNDCSizing(merged.size, merged.fileCount, merged.ndcSize, merged.ndcCount, merged.ocrCount, merged.ocrPotentialCount);
+  const allPaths = results.flatMap(r => r.scanPaths || []);
+  res.json({ tree: merged, sizing, scanPaths: allPaths, deepScan: false, includeHidden: false });
+});
+
+// ── SharePoint / Microsoft Graph API ─────────────────────────────────────────
+
+async function getGraphToken(tenantId, clientId, clientSecret) {
+  const body = new URLSearchParams({
+    client_id: clientId,
+    client_secret: clientSecret,
+    scope: 'https://graph.microsoft.com/.default',
+    grant_type: 'client_credentials'
+  });
+  const resp = await fetch(`https://login.microsoftonline.com/${encodeURIComponent(tenantId)}/oauth2/v2.0/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString()
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error_description || 'Authentication failed. Check your Tenant ID, Application ID, and Client Secret.');
+  }
+  const data = await resp.json();
+  return data.access_token;
+}
+
+async function graphGet(token, url) {
+  const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' } });
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    throw new Error(err.error?.message || `Graph API error: ${resp.status} ${resp.statusText}`);
+  }
+  return resp.json();
+}
+
+async function scanDriveWithGraph(token, driveId) {
+  const maps = { supported: {}, unsupported: {}, ocr: {}, ocrPotential: {}, categories: {} };
+  for (const cat of CATEGORIES) maps.categories[cat.name] = { name: cat.name, color: cat.color, count: 0, size: 0 };
+
+  let totalSize = 0, totalFiles = 0, ndcSize = 0, ndcCount = 0;
+  let ocrSize = 0, ocrCount = 0, ocrPotentialSize = 0, ocrPotentialCount = 0;
+
+  let url = `https://graph.microsoft.com/v1.0/drives/${driveId}/root/delta?$select=name,size,file&$top=1000`;
+
+  while (url) {
+    const page = await graphGet(token, url);
+    const items = page.value || [];
+
+    for (const item of items) {
+      if (!item.file) continue;
+      const sz = item.size || 0;
+      const ext = path.extname(item.name || '').toLowerCase();
+      totalSize += sz;
+      totalFiles++;
+
+      if (NDC_EXTENSIONS.has(ext)) {
+        ndcSize += sz; ndcCount++;
+        if (!maps.supported[ext]) {
+          const cat = EXT_TO_CATEGORY[ext] || null;
+          maps.supported[ext] = { ext, count: 0, size: 0, category: cat ? cat.name : 'Other' };
+        }
+        maps.supported[ext].count++; maps.supported[ext].size += sz;
+        const cat = EXT_TO_CATEGORY[ext];
+        if (cat && maps.categories[cat.name]) { maps.categories[cat.name].count++; maps.categories[cat.name].size += sz; }
+        if (OCR_EXTENSIONS.has(ext)) {
+          ocrSize += sz; ocrCount++;
+          if (!maps.ocr[ext]) maps.ocr[ext] = { ext, count: 0, size: 0, tier: 'definite' };
+          maps.ocr[ext].count++; maps.ocr[ext].size += sz;
+        }
+        if (OCR_POTENTIAL_EXTENSIONS.has(ext)) {
+          ocrPotentialSize += sz; ocrPotentialCount++;
+          if (!maps.ocrPotential[ext]) maps.ocrPotential[ext] = { ext, count: 0, size: 0, tier: 'potential' };
+          maps.ocrPotential[ext].count++; maps.ocrPotential[ext].size += sz;
+        }
+      } else {
+        const key = ext || '(no extension)';
+        if (!maps.unsupported[key]) maps.unsupported[key] = { ext: key, count: 0, size: 0, sample: item.name || '' };
+        maps.unsupported[key].count++; maps.unsupported[key].size += sz;
+      }
+    }
+    url = page['@odata.nextLink'] || null;
+  }
+
+  return {
+    size: totalSize, fileCount: totalFiles, ndcSize, ndcCount,
+    ocrSize, ocrCount, ocrPotentialSize, ocrPotentialCount,
+    supported: Object.values(maps.supported).sort((a, b) => b.count - a.count),
+    unsupported: Object.values(maps.unsupported).sort((a, b) => b.count - a.count),
+    ocr: Object.values(maps.ocr).sort((a, b) => b.count - a.count),
+    ocrPotential: Object.values(maps.ocrPotential).sort((a, b) => b.count - a.count),
+    categories: Object.values(maps.categories).filter(c => c.count > 0).sort((a, b) => b.count - a.count),
+    children: []
+  };
+}
+
+app.post('/api/sharepoint/connect', async (req, res) => {
+  const { tenantId, clientId, clientSecret } = req.body;
+  if (!tenantId || !clientId || !clientSecret) {
+    return res.status(400).json({ error: 'tenantId, clientId, clientSecret required' });
+  }
+  try {
+    const token = await getGraphToken(tenantId, clientId, clientSecret);
+    const org = await graphGet(token, 'https://graph.microsoft.com/v1.0/organization?$select=displayName');
+    const orgName = (org.value && org.value[0] && org.value[0].displayName) || tenantId;
+    res.json({ ok: true, orgName });
+  } catch (e) {
+    res.status(401).json({ error: e.message });
+  }
+});
+
+app.post('/api/sharepoint/sites', async (req, res) => {
+  const { tenantId, clientId, clientSecret } = req.body;
+  try {
+    const token = await getGraphToken(tenantId, clientId, clientSecret);
+    const sitesData = await graphGet(token, 'https://graph.microsoft.com/v1.0/sites?search=*&$top=100&$select=id,displayName,webUrl,name');
+    const sites = (sitesData.value || []).map(s => ({ id: s.id, name: s.displayName || s.name, url: s.webUrl, type: 'sharepoint' }));
+    let users = [];
+    try {
+      const usersData = await graphGet(token, 'https://graph.microsoft.com/v1.0/users?$top=100&$select=id,displayName,userPrincipalName&$filter=accountEnabled eq true');
+      users = (usersData.value || []).map(u => ({ id: u.id, name: u.displayName, upn: u.userPrincipalName, type: 'onedrive' }));
+    } catch {}
+    res.json({ sites, users });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/sharepoint/scan', async (req, res) => {
+  const { tenantId, clientId, clientSecret, targets } = req.body;
+  if (!targets || targets.length === 0) return res.status(400).json({ error: 'No targets selected' });
+  try {
+    const token = await getGraphToken(tenantId, clientId, clientSecret);
+    const results = [];
+    for (const target of targets) {
+      try {
+        let driveId, label;
+        if (target.type === 'sharepoint') {
+          const drive = await graphGet(token, `https://graph.microsoft.com/v1.0/sites/${encodeURIComponent(target.id)}/drive`);
+          driveId = drive.id; label = target.name;
+        } else if (target.type === 'onedrive') {
+          const drive = await graphGet(token, `https://graph.microsoft.com/v1.0/users/${encodeURIComponent(target.id)}/drive`);
+          driveId = drive.id; label = `OneDrive — ${target.name}`;
+        }
+        if (!driveId) continue;
+        const scanResult = await scanDriveWithGraph(token, driveId);
+        scanResult.name = label;
+        scanResult.path = target.url || target.upn || label;
+        results.push(scanResult);
+      } catch (err) {
+        console.error(`Failed to scan ${target.name}: ${err.message}`);
+      }
+    }
+    if (results.length === 0) return res.status(500).json({ error: 'No targets could be scanned. Check permissions.' });
+    const tree = mergeScans(results);
+    const sizing = computeNDCSizing(tree.size, tree.fileCount, tree.ndcSize, tree.ndcCount, tree.ocrCount, tree.ocrPotentialCount);
+    res.json({ tree, sizing, scanPaths: targets.map(t => t.name), deepScan: false, includeHidden: false });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────────
