@@ -393,15 +393,27 @@ function computeNDCSizing(totalBytes, totalFiles, ndcBytes, ndcFiles, ocrCount, 
 
 function getLocalDrives() {
   if (process.platform === 'win32') {
+    // Try PowerShell first (works on all Windows versions including Win11 where wmic is removed)
     try {
-      const out = execSync('wmic logicaldisk get DeviceID,Size,FreeSpace,VolumeName /format:csv', { encoding: 'utf8' });
-      return out.trim().split('\n').slice(2).filter(Boolean).map(line => {
-        const p = line.split(',');
-        return { letter: p[1], label: p[3] || p[1], free: parseInt(p[2]) || 0, total: parseInt(p[4]) || 0 };
-      }).filter(d => d.letter && d.letter.trim());
-    } catch {
-      return [{ letter: 'C:\\', label: 'C:', free: 0, total: 0 }];
-    }
+      const ps = `Get-PSDrive -PSProvider FileSystem | Select-Object Name,@{N='Free';E={$_.Free}},@{N='Used';E={$_.Used}},@{N='Root';E={$_.Root}} | ConvertTo-Json`;
+      const out = execSync(`powershell -NoProfile -Command "${ps}"`, { encoding: 'utf8', timeout: 10000 });
+      const drives = JSON.parse(out);
+      const arr = Array.isArray(drives) ? drives : [drives];
+      return arr.filter(d => d.Name).map(d => ({
+        letter: d.Root || (d.Name + ':\\'),
+        label: d.Name,
+        free: d.Free || 0,
+        total: (d.Free || 0) + (d.Used || 0)
+      }));
+    } catch {}
+    // Fallback: probe common drive letters
+    try {
+      const letters = 'CDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+      return letters
+        .filter(l => { try { fs.accessSync(l + ':\\'); return true; } catch { return false; } })
+        .map(l => ({ letter: l + ':\\', label: l + ':', free: 0, total: 0 }));
+    } catch {}
+    return [{ letter: 'C:\\', label: 'C:', free: 0, total: 0 }];
   }
   return [{ letter: '/', label: 'Root', free: 0, total: 0 }];
 }
