@@ -7,11 +7,11 @@
     "start": "node server.js",
     "dev:server": "node server.js",
     "dev:client": "cd client && npm run dev",
-    "build:ui": "cd client && npm install && npm run build",
+    "build:ui": "cd client && npm install && npm run build && cd .. && node build-inline.js",
     "build": "npm run build:ui && pkg server.js --targets node18-win-x64 --output dist/NDC-Sizer.exe --compress GZip"
   },
   "pkg": {
-    "assets": ["public/**/*"],
+    "scripts": ["inline-ui.js"],
     "targets": ["node18-win-x64"],
     "outputPath": "dist"
   },
