@@ -420,8 +420,35 @@ function getLocalDrives() {
 
 // ── Serve UI ──────────────────────────────────────────────────────────────────
 
-app.use(express.static(path.join(__dirname, 'public')));
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+// When running as a pkg executable, assets live inside the snapshot FS and
+// cannot be read by express.static / send directly. Extract them to a real
+// temp folder on first launch and serve from there.
+function resolvePublicDir() {
+  const snapshotPublic = path.join(__dirname, 'public');
+  if (!process.pkg) return snapshotPublic; // dev mode — real FS, nothing to do
+
+  const tmpPublic = path.join(require('os').tmpdir(), 'ndc-sizer-ui');
+
+  function copyDir(src, dest) {
+    try {
+      fs.mkdirSync(dest, { recursive: true });
+      for (const entry of fs.readdirSync(src)) {
+        const s = path.join(src, entry), d = path.join(dest, entry);
+        if (fs.statSync(s).isDirectory()) copyDir(s, d);
+        else fs.writeFileSync(d, fs.readFileSync(s));
+      }
+    } catch {}
+  }
+
+  if (!fs.existsSync(path.join(tmpPublic, 'index.html'))) {
+    copyDir(snapshotPublic, tmpPublic);
+  }
+  return tmpPublic;
+}
+
+const PUBLIC_DIR = resolvePublicDir();
+app.use(express.static(PUBLIC_DIR));
+app.get('/', (req, res) => res.sendFile(path.join(PUBLIC_DIR, 'index.html')));
 
 const _LEGACY_HTML_START = `<!DOCTYPE html>
 <html lang="en">
