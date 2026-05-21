@@ -24,12 +24,17 @@ if (!cssFile || !jsFile) {
 const css = fs.readFileSync(path.join(assetsDir, cssFile), 'utf8');
 const js  = fs.readFileSync(path.join(assetsDir, jsFile),  'utf8');
 
-// Inline all static assets referenced in index.html
+// Escape </script> inside JS so the HTML parser never closes the tag early
+const jsSafe = js.replace(/<\/script/gi, '<\\/script');
+
+// Inline all static assets referenced in index.html.
+// Use function replacements so that $& / $' / $` patterns in CSS/JS are
+// never interpreted as replacement specifiers by String.prototype.replace.
 let html = indexHtml
   .replace(/<link[^>]*rel="stylesheet"[^>]*href="[^"]*"[^>]*>/,
-    `<style>${css}</style>`)
+    () => `<style>${css}</style>`)
   .replace(/<script[^>]*type="module"[^>]*src="[^"]*"[^>]*><\/script>/,
-    `<script>${js}</script>`);
+    () => `<script>${jsSafe}</script>`);
 
 // Inline the Netwrix logo as base64 (used by /218769606.png route)
 const logoPath = path.join(publicDir, '218769606.png');
