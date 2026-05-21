@@ -2,6 +2,17 @@
 process.removeAllListeners('warning');
 process.on('warning', w => { if (w.name !== 'ExperimentalWarning') console.warn(w.message); });
 
+// When bundled as a Windows GUI exe (no console), redirect output to a log file
+if (process.pkg && !process.stdout.isTTY) {
+  try {
+    const os = require('os');
+    const logPath = require('path').join(os.tmpdir(), 'NDC-Sizer.log');
+    const logStream = require('fs').createWriteStream(logPath, { flags: 'a' });
+    process.stdout.write = (...a) => logStream.write(...a);
+    process.stderr.write = (...a) => logStream.write(...a);
+  } catch (_) {}
+}
+
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -1741,9 +1752,20 @@ app.post('/api/sharepoint/scan', async (req, res) => {
 
 const PORT = 3737;
 app.listen(PORT, '127.0.0.1', () => {
-  console.log('NDC Sizer running at http://localhost:' + PORT);
   const url = 'http://localhost:' + PORT;
+  console.log('NDC Sizer running at ' + url);
   if (process.platform === 'win32') exec('start ' + url);
   else if (process.platform === 'darwin') exec('open ' + url);
   else exec('xdg-open ' + url);
+}).on('error', err => {
+  if (err.code === 'EADDRINUSE') {
+    // Already running — just open the browser and exit
+    const url = 'http://localhost:' + PORT;
+    if (process.platform === 'win32') exec('start ' + url);
+    else if (process.platform === 'darwin') exec('open ' + url);
+    else exec('xdg-open ' + url);
+    setTimeout(() => process.exit(0), 500);
+  } else {
+    throw err;
+  }
 });
