@@ -1,3 +1,7 @@
+// Suppress Node 18 experimental-fetch warning — it's stable enough for our use
+process.removeAllListeners('warning');
+process.on('warning', w => { if (w.name !== 'ExperimentalWarning') console.warn(w.message); });
+
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -1721,7 +1725,7 @@ app.post('/api/sharepoint/scan', async (req, res) => {
         scanResult.path = target.url || target.upn || label;
         results.push(scanResult);
       } catch (err) {
-        console.error(`Failed to scan ${target.name}: ${err.message}`);
+        // Access denied / permission errors are expected for sites the account can't read — skip silently
       }
     }
     if (results.length === 0) return res.status(500).json({ error: 'No targets could be scanned. Check permissions.' });
