@@ -30,11 +30,16 @@ const jsSafe = js.replace(/<\/script/gi, '<\\/script');
 // Inline all static assets referenced in index.html.
 // Use function replacements so that $& / $' / $` patterns in CSS/JS are
 // never interpreted as replacement specifiers by String.prototype.replace.
+//
+// The original <script type="module"> is deferred by the browser automatically.
+// An inline <script> is NOT deferred, so we must move it just before </body>
+// to ensure document.getElementById('root') exists when React mounts.
 let html = indexHtml
   .replace(/<link[^>]*rel="stylesheet"[^>]*href="[^"]*"[^>]*>/,
     () => `<style>${css}</style>`)
   .replace(/<script[^>]*type="module"[^>]*src="[^"]*"[^>]*><\/script>/,
-    () => `<script>${jsSafe}</script>`);
+    () => '')
+  .replace('</body>', () => `<script>${jsSafe}</script>\n  </body>`);
 
 // Inline the Netwrix logo as base64 (used by /218769606.png route)
 const logoPath = path.join(publicDir, '218769606.png');
