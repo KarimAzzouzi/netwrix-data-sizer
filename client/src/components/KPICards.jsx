@@ -6,12 +6,12 @@ function KPICard({ label, value, sub, accent, icon }) {
     <div className={`card p-5 ${accent ? `border-l-4 border-l-[${accent}]` : ''}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <div className="text-2xl font-extrabold text-[#1B3A6B] leading-tight truncate">{value}</div>
-          <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-1.5">{label}</div>
-          {sub && <div className="text-xs text-slate-400 mt-0.5">{sub}</div>}
+          <div className="text-2xl font-extrabold text-gray-900 dark:text-gray-50 leading-tight truncate">{value}</div>
+          <div className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-1.5">{label}</div>
+          {sub && <div className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{sub}</div>}
         </div>
         {icon && (
-          <div className="ml-3 text-slate-300 flex-shrink-0">
+          <div className="ml-3 text-gray-200 dark:text-zinc-700 flex-shrink-0">
             {icon}
           </div>
         )}
@@ -74,10 +74,10 @@ export default function KPICards({ sizing }) {
                 {sizing.tier}
               </span>
             </div>
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-500 mt-2">Deployment Tier</div>
-            <div className="text-xs text-slate-400 mt-0.5">{sizing.ndcServers} NDC server{sizing.ndcServers > 1 ? 's' : ''}</div>
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mt-2">Deployment Tier</div>
+            <div className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">{sizing.ndcServers} NDC server{sizing.ndcServers > 1 ? 's' : ''}</div>
           </div>
-          <div className="ml-3 text-slate-300 flex-shrink-0">
+          <div className="ml-3 text-gray-200 dark:text-zinc-700 flex-shrink-0">
             <ServerIcon className="w-8 h-8" />
           </div>
         </div>

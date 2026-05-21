@@ -74,7 +74,7 @@ export default function Results({ data, addToast }) {
           <div className="flex items-center gap-2 card-title">
             <TreeIcon className="w-4 h-4" />
             Directory Tree
-            <span className="ml-auto text-slate-400 normal-case font-normal text-xs">Right-click for options</span>
+            <span className="ml-auto text-gray-400 dark:text-zinc-500 normal-case font-normal text-xs">Right-click for options</span>
           </div>
           <FileTree tree={tree} />
         </div>

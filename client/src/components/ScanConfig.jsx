@@ -172,7 +172,7 @@ export default function ScanConfig({ onScanComplete, scanning, setScanning, addT
       </div>
 
       {/* Mode tabs */}
-      <div className="flex gap-1 border-b border-slate-200 mb-5 flex-wrap">
+      <div className="flex gap-1 border-b border-gray-200 dark:border-zinc-700 mb-5 flex-wrap">
         {tabs.map(t => (
           <button
             key={t.id}
@@ -256,14 +256,14 @@ export default function ScanConfig({ onScanComplete, scanning, setScanning, addT
             </button>
           </div>
           {sharesVisible && (
-            <div className="border border-slate-200 rounded-lg bg-slate-50 max-h-44 overflow-y-auto mb-2">
+            <div className="border border-gray-200 dark:border-zinc-700 rounded-lg bg-gray-50 dark:bg-zinc-800 max-h-44 overflow-y-auto mb-2">
               {shares.length === 0 ? (
-                <p className="text-slate-400 text-sm p-3">No shares found.</p>
+                <p className="text-gray-400 dark:text-zinc-500 text-sm p-3">No shares found.</p>
               ) : (
                 shares.map(s => (
                   <label
                     key={s.unc}
-                    className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-blue-50 text-sm"
+                    className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-zinc-700 text-sm"
                   >
                     <input
                       type="checkbox"
@@ -271,8 +271,8 @@ export default function ScanConfig({ onScanComplete, scanning, setScanning, addT
                       checked={selectedShares.has(s.unc)}
                       onChange={() => toggleShare(s.unc)}
                     />
-                    <span className="font-medium text-slate-700">{s.name}</span>
-                    <span className="text-slate-400 text-xs">{s.unc}</span>
+                    <span className="font-medium text-gray-700 dark:text-zinc-200">{s.name}</span>
+                    <span className="text-gray-400 dark:text-zinc-500 text-xs">{s.unc}</span>
                   </label>
                 ))
               )}
@@ -293,24 +293,26 @@ export default function ScanConfig({ onScanComplete, scanning, setScanning, addT
 
       {/* Paths to scan */}
       <div className="mb-5">
-        <div className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+        <div className="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 mb-2">
           Targets to Scan
-          {totalItems > 0 && <span className="ml-2 text-[#1B3A6B]">({totalItems})</span>}
+          {totalItems > 0 && <span className="ml-2 text-[#1B3A6B] dark:text-[#4A90D9]">({totalItems})</span>}
         </div>
         <div
           className={`flex flex-wrap gap-2 min-h-[40px] p-2.5 rounded-lg border-2 border-dashed ${
-            totalItems === 0 ? 'border-slate-200 items-center justify-center' : 'border-slate-200 bg-slate-50/50'
+            totalItems === 0
+              ? 'border-gray-200 dark:border-zinc-700 items-center justify-center'
+              : 'border-gray-200 dark:border-zinc-700 bg-gray-50/50 dark:bg-zinc-800/30'
           }`}
         >
           {totalItems === 0 ? (
-            <span className="text-slate-400 text-sm">No targets added yet.</span>
+            <span className="text-gray-400 dark:text-zinc-500 text-sm">No targets added yet.</span>
           ) : (
             <>
               {scanPaths.map((p, i) => (
                 <div key={`fs-${i}`} className="path-tag">
                   <FolderIcon className="w-3.5 h-3.5 flex-shrink-0" />
                   <span className="truncate max-w-[220px] text-sm" title={p}>{p}</span>
-                  <button onClick={() => removePath(i)} className="flex-shrink-0 text-slate-400 hover:text-red-500 transition-colors">
+                  <button onClick={() => removePath(i)} className="flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 transition-colors">
                     <XIcon className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -350,33 +352,33 @@ export default function ScanConfig({ onScanComplete, scanning, setScanning, addT
         </button>
 
         <div className="flex flex-wrap gap-3">
-          <label className="flex items-center gap-2.5 cursor-pointer text-sm bg-amber-50 border border-amber-200 rounded-lg px-3.5 py-2.5 select-none">
+          <label className="flex items-center gap-2.5 cursor-pointer text-sm bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg px-3.5 py-2.5 select-none">
             <input type="checkbox" className="accent-[#E8702A] w-3.5 h-3.5 cursor-pointer" checked={deepScan} onChange={e => setDeepScan(e.target.checked)} />
             <span>
-              <strong className="text-amber-800">Deep OCR Analysis</strong>
-              <span className="text-amber-700 ml-1">— inspect file content for 100% accurate OCR detection</span>
+              <strong className="text-amber-800 dark:text-amber-300">Deep OCR Analysis</strong>
+              <span className="text-amber-700 dark:text-amber-400 ml-1">— inspect file content for 100% accurate OCR detection</span>
             </span>
-            <span className="bg-amber-100 text-amber-800 rounded-full px-2 py-0.5 text-xs font-bold">SLOWER</span>
+            <span className="bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 rounded-full px-2 py-0.5 text-xs font-bold">SLOWER</span>
           </label>
 
-          <label className="flex items-center gap-2.5 cursor-pointer text-sm bg-blue-50 border border-blue-200 rounded-lg px-3.5 py-2.5 select-none">
+          <label className="flex items-center gap-2.5 cursor-pointer text-sm bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg px-3.5 py-2.5 select-none">
             <input type="checkbox" className="accent-[#1B3A6B] w-3.5 h-3.5 cursor-pointer" checked={includeHidden} onChange={e => setIncludeHidden(e.target.checked)} />
             <span>
-              <strong className="text-[#1B3A6B]">Include Hidden Files</strong>
-              <span className="text-slate-500 ml-1">— scan files and folders starting with a dot (.)</span>
+              <strong className="text-[#1B3A6B] dark:text-blue-300">Include Hidden Files</strong>
+              <span className="text-gray-500 dark:text-zinc-400 ml-1">— scan files and folders starting with a dot (.)</span>
             </span>
           </label>
         </div>
 
         {scanning && (
           <div className="mt-1">
-            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-2 bg-gray-200 dark:bg-zinc-700 rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-[#1B3A6B] to-[#E8702A] transition-all duration-300"
                 style={{ width: `${progress}%`, animation: 'pulse 1.5s infinite' }}
               />
             </div>
-            <p className="text-xs text-slate-400 mt-1.5">
+            <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1.5">
               {spTargets.length > 0 ? 'Scanning filesystem and Microsoft 365, please wait...' : 'Scanning filesystem, please wait...'}
             </p>
             <style>{`@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.7} }`}</style>

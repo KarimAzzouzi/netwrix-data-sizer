@@ -2,11 +2,11 @@ import { ServerIcon, CpuIcon, MemoryIcon, StorageIcon, AlertIcon } from './Icons
 
 function RecRow({ label, spec, value, notes, alt }) {
   return (
-    <tr className={alt ? 'bg-slate-50' : ''}>
-      <td className="px-4 py-2.5 text-sm font-semibold text-slate-700 border-b border-slate-100 whitespace-nowrap">{label}</td>
-      <td className="px-4 py-2.5 text-sm text-slate-500 border-b border-slate-100">{spec}</td>
-      <td className="px-4 py-2.5 text-sm font-bold text-[#2A5298] border-b border-slate-100">{value}</td>
-      <td className="px-4 py-2.5 text-xs text-slate-400 border-b border-slate-100">{notes}</td>
+    <tr>
+      <td className="px-4 py-2.5 text-sm font-semibold text-gray-700 dark:text-zinc-200 border-b border-gray-100 dark:border-zinc-800 whitespace-nowrap">{label}</td>
+      <td className="px-4 py-2.5 text-sm text-gray-500 dark:text-zinc-400 border-b border-gray-100 dark:border-zinc-800">{spec}</td>
+      <td className="px-4 py-2.5 text-sm font-bold text-[#2A5298] dark:text-[#4A90D9] border-b border-gray-100 dark:border-zinc-800">{value}</td>
+      <td className="px-4 py-2.5 text-xs text-gray-400 dark:text-zinc-500 border-b border-gray-100 dark:border-zinc-800">{notes}</td>
     </tr>
   )
 }
@@ -21,7 +21,7 @@ export default function HardwareRec({ sizing }) {
 
   return (
     <div>
-      <div className="overflow-x-auto rounded-lg border border-slate-200">
+      <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-zinc-800">
         <table className="data-table">
           <thead>
             <tr>
@@ -94,33 +94,33 @@ export default function HardwareRec({ sizing }) {
 
       {/* OCR Impact box */}
       {ndcPerServer.ocrAdj > 0 && (
-        <div className="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 text-sm font-bold text-orange-800 mb-2">
+        <div className="mt-4 bg-orange-50 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-800 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-sm font-bold text-orange-800 dark:text-orange-300 mb-2">
             <AlertIcon className="w-4 h-4" />
             OCR Workload Impact
           </div>
-          <p className="text-sm text-orange-700 leading-relaxed">{ocrNote}</p>
+          <p className="text-sm text-orange-700 dark:text-orange-300 leading-relaxed">{ocrNote}</p>
           <div className="flex gap-5 mt-3">
             <div className="text-center">
-              <div className="text-xl font-extrabold text-orange-700">+{ndcPerServer.ocrAdj}</div>
-              <div className="text-xs text-orange-600 uppercase tracking-wider mt-0.5">Extra Cores / Server</div>
+              <div className="text-xl font-extrabold text-orange-700 dark:text-orange-300">+{ndcPerServer.ocrAdj}</div>
+              <div className="text-xs text-orange-600 dark:text-orange-400 uppercase tracking-wider mt-0.5">Extra Cores / Server</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-extrabold text-orange-700">{sizing.ocrPct}%</div>
-              <div className="text-xs text-orange-600 uppercase tracking-wider mt-0.5">OCR Workload</div>
+              <div className="text-xl font-extrabold text-orange-700 dark:text-orange-300">{sizing.ocrPct}%</div>
+              <div className="text-xs text-orange-600 dark:text-orange-400 uppercase tracking-wider mt-0.5">OCR Workload</div>
             </div>
             <div className="text-center">
-              <div className="text-xl font-extrabold text-orange-700">{Number(sizing.ocrEffective || 0).toLocaleString()}</div>
-              <div className="text-xs text-orange-600 uppercase tracking-wider mt-0.5">Effective OCR Files</div>
+              <div className="text-xl font-extrabold text-orange-700 dark:text-orange-300">{Number(sizing.ocrEffective || 0).toLocaleString()}</div>
+              <div className="text-xs text-orange-600 dark:text-orange-400 uppercase tracking-wider mt-0.5">Effective OCR Files</div>
             </div>
           </div>
         </div>
       )}
 
       {/* Notes box */}
-      <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <div className="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2">Deployment Notes</div>
-        <ul className="text-sm text-amber-800 space-y-1.5">
+      <div className="mt-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+        <div className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider mb-2">Deployment Notes</div>
+        <ul className="text-sm text-amber-800 dark:text-amber-300 space-y-1.5">
           <li className="leading-relaxed">{notes}</li>
           {storageNote && <li className="leading-relaxed">{storageNote}</li>}
         </ul>
